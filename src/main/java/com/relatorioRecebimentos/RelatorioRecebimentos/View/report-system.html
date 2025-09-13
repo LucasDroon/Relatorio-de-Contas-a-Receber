@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Relatórios</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'montserrat': ['Montserrat', 'sans-serif'],
+                    },
+                    colors: {
+                        'custom-blue': '#335e9e',
+                        'custom-gray': '#d9d9d9',
+                        'custom-white': '#FFFFFF',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <style>
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .slide-in { animation: slideIn 0.3s ease-out; }
+        @media print {
+            .no-print { display: none !important; }
+            .print-full { width: 100% !important; }
+        }
+
+        .solid-blue-bg {
+            background-color: #335e9e;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-custom-gray min-h-screen font-montserrat">
+<nav class="solid-blue-bg shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex justify-between items-center py-4">
+            <div class="flex items-center space-x-3">
+                <i data-lucide="bar-chart-3" class="text-white w-8 h-8"></i>
+                <h1 class="text-white text-xl font-bold">Sistema de Relatórios</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="configBtn" class="text-white hover:text-gray-200 transition-colors">
+                    <i data-lucide="settings" class="w-6 h-6"></i>
+                </button>
+                <button id="helpBtn" class="text-white hover:text-gray-200 transition-colors">
+                    <i data-lucide="help-circle" class="w-6 h-6"></i>
+                </button>
+                <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <i data-lucide="user" class="w-5 h-5 text-white"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div class="lg:col-span-2 bg-custom-white rounded-xl shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i data-lucide="filter" class="w-5 h-5 mr-2 text-custom-blue"></i>
+                Filtros do Relatório
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Período</label>
+                    <select id="periodoFilter" class="w-full p-3 border border-custom-gray rounded-lg focus:ring-2 focus:ring-custom-blue focus:border-transparent">
+                        <option value="30" selected>Últimos 30 dias</option>
+                        <option value="7">Últimos 7 dias</option>
+                        <option value="90">Últimos 3 meses</option>
+                        <option value="365">Último ano</option>
+                        <option value="custom">Período personalizado</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
+                    <select id="formaPagamentoFilter" class="w-full p-3 border border-custom-gray rounded-lg focus:ring-2 focus:ring-custom-blue focus:border-transparent">
+                        <option value="all">Todas</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                    </select>
+                </div>
+
+                <div id="customDateRange" class="hidden md:col-span-2">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Data Inicial</label>
+                            <input type="date" id="dataInicial" class="w-full p-3 border border-custom-gray rounded-lg focus:ring-2 focus:ring-custom-blue focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Data Final</label>
+                            <input type="date" id="dataFinal" class="w-full p-3 border border-custom-gray rounded-lg focus:ring-2 focus:ring-custom-blue focus:border-transparent">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Plano</label>
+                    <select id="tipoPlanoFilter" class="w-full p-3 border border-custom-gray rounded-lg focus:ring-2 focus:ring-custom-blue focus:border-transparent">
+                        <option value="all">Todos</option>
+                        <option value="AT">Caixa</option>
+                        <option value="PA">Contas a Pagar</option>
+                        <option value="PL">Capital Social</option>
+                        <option value="RC">Receita de Serviços</option>
+                        <option value="DP">Despesas Administrativas</option>
+                    </select>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="bg-custom-white rounded-xl shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i data-lucide="settings" class="w-5 h-5 mr-2 text-custom-blue"></i>
+                Configurações
+            </h2>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Relatório</label>
+                    <select id="tipoRelatorio" class="w-full p-3 border border-custom-gray rounded-lg focus:ring-2 focus:ring-custom-blue focus:border-transparent">
+                        <option value="resumo">Resumo Executivo</option>
+                        <option value="detalhado">Detalhado</option>
+                        <option value="grafico">Gráfico</option>
+                        <option value="comparativo">Comparativo</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Formato</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="radio" name="formato" value="tabela" checked class="text-custom-blue focus:ring-custom-blue">
+                            <span class="ml-2 text-sm text-gray-700">Tabela</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="formato" value="grafico" class="text-custom-blue focus:ring-custom-blue">
+                            <span class="ml-2 text-sm text-gray-700">Gráfico</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="formato" value="cards" class="text-custom-blue focus:ring-custom-blue">
+                            <span class="ml-2 text-sm text-gray-700">Cards</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex items-center">
+                    <input type="checkbox" id="incluirGraficos" checked class="text-custom-blue focus:ring-custom-blue rounded">
+                    <label for="incluirGraficos" class="ml-2 text-sm text-gray-700">Incluir gráficos</label>
+                </div>
+
+                <div class="flex items-center">
+                    <input type="checkbox" id="incluirResumo" checked class="text-custom-blue focus:ring-custom-blue rounded">
+                    <label for="incluirResumo" class="ml-2 text-sm text-gray-700">Incluir resumo</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mb-8">
+        <button id="gerarRelatorio" class="bg-custom-blue hover:opacity-90 text-white font-bold py-4 px-8 rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl">
+            <i data-lucide="file-text" class="w-5 h-5 inline mr-2"></i>
+            Gerar Relatório
+        </button>
+    </div>
+
+    <div id="areaRelatorio" class="hidden">
+        <div class="bg-custom-white rounded-xl shadow-lg p-6 mb-6 no-print">
+            <div class="flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                    <i data-lucide="file-text" class="w-6 h-6 mr-2 text-green-600"></i>
+                    Relatório Gerado
+                </h2>
+                <div class="flex space-x-3">
+                    <button id="salvarPDF" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                        <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+                        Salvar PDF
+                    </button>
+                    <button id="novoRelatorio" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                        <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i>
+                        Novo Relatório
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="conteudoRelatorio" class="bg-custom-white rounded-xl shadow-lg p-8 print-full">
+        </div>
+    </div>
+
+    <div id="loading" class="hidden text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-custom-blue"></div>
+        <p class="mt-4 text-gray-600">Gerando relatório...</p>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

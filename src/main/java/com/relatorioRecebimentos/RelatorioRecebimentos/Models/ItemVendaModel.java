@@ -1,5 +1,6 @@
 package com.relatorioRecebimentos.RelatorioRecebimentos.Models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
@@ -7,6 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -53,6 +56,11 @@ public class ItemVendaModel {
     @ToString.Exclude
     private ProfissionalModel profissionalModel;
 
+    //RELACIONAMENTOS
+    @OneToMany(mappedBy = "itemVendaModel")
+    @JsonBackReference
+    @ToString.Exclude
+    private List<MovContabilModel> movContabilModels;
 
 
 
